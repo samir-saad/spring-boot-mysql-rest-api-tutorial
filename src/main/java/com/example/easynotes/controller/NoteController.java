@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.easynotes.dto.DTOMapper;
+import com.example.easynotes.dto.NoteDto;
 import com.example.easynotes.model.Note;
 import com.example.easynotes.repository.NoteRepository;
 
@@ -25,51 +27,56 @@ import com.example.easynotes.repository.NoteRepository;
 @RequestMapping("/api")
 public class NoteController {
 
-    @Autowired
-    NoteRepository noteRepository;
+	@Autowired
+	NoteRepository noteRepository;
 
-    @GetMapping("/notes")
-    public Page<Note> getAllNotes(Pageable pageRequest) {
-    	return noteRepository.findAll(pageRequest);
-//        return noteRepository.findAll();
-    }
+	@Autowired
+	DTOMapper mapper;
 
-    @GetMapping("/notes/{id}")
-    public ResponseEntity<Note> getNoteById(@PathVariable(value = "id") Long noteId) {
-        Note note = noteRepository.findOne(noteId);
-        if(note == null) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok().body(note);
-    }
+	@GetMapping("/notes")
+	public Page<NoteDto> getAllNotes(Pageable pageRequest) {
 
-    @PostMapping("/notes")
-    public Note createNote(@Valid @RequestBody Note note) {
-        return noteRepository.save(note);
-    }
+		Page<Note> notes = noteRepository.findAll(pageRequest);
 
-    @PutMapping("/notes/{id}")
-    public ResponseEntity<Note> updateNote(@PathVariable(value = "id") Long noteId,
-                                           @Valid @RequestBody Note noteDetails) {
-        Note note = noteRepository.findOne(noteId);
-        if(note == null) {
-            return ResponseEntity.notFound().build();
-        }
-        note.setTitle(noteDetails.getTitle());
-        note.setContent(noteDetails.getContent());
+		return mapper.mapList(notes, pageRequest, NoteDto.class);
+	}
 
-        Note updatedNote = noteRepository.save(note);
-        return ResponseEntity.ok(updatedNote);
-    }
+	@GetMapping("/notes/{id}")
+	public ResponseEntity<Note> getNoteById(@PathVariable(value = "id") Long noteId) {
+		Note note = noteRepository.findOne(noteId);
+		if (note == null) {
+			return ResponseEntity.notFound().build();
+		}
+		return ResponseEntity.ok().body(note);
+	}
 
-    @DeleteMapping("/notes/{id}")
-    public ResponseEntity<Note> deleteNote(@PathVariable(value = "id") Long noteId) {
-        Note note = noteRepository.findOne(noteId);
-        if(note == null) {
-            return ResponseEntity.notFound().build();
-        }
+	@PostMapping("/notes")
+	public NoteDto createNote(@Valid @RequestBody NoteDto noteDto) {
+		return mapper.map(noteRepository.save(mapper.map(noteDto, Note.class)), NoteDto.class);
+	}
 
-        noteRepository.delete(note);
-        return ResponseEntity.ok().build();
-    }
+	@PutMapping("/notes/{id}")
+	public ResponseEntity<Note> updateNote(@PathVariable(value = "id") Long noteId,
+			@Valid @RequestBody Note noteDetails) {
+		Note note = noteRepository.findOne(noteId);
+		if (note == null) {
+			return ResponseEntity.notFound().build();
+		}
+		note.setTitle(noteDetails.getTitle());
+		note.setContent(noteDetails.getContent());
+
+		Note updatedNote = noteRepository.save(note);
+		return ResponseEntity.ok(updatedNote);
+	}
+
+	@DeleteMapping("/notes/{id}")
+	public ResponseEntity<Note> deleteNote(@PathVariable(value = "id") Long noteId) {
+		Note note = noteRepository.findOne(noteId);
+		if (note == null) {
+			return ResponseEntity.notFound().build();
+		}
+
+		noteRepository.delete(note);
+		return ResponseEntity.ok().build();
+	}
 }
